@@ -202,6 +202,15 @@ def upload_section():
             type=['txt'],
             help="Export your WhatsApp chat without media and upload the .txt file"
         )
+        st.markdown("""
+        <p style="font-size: 12px;">
+        <strong>Disclaimer:</strong><br>
+        The owner/creator of this application does <strong>not</strong> save any uploaded files. 
+        Files are uploaded exclusively through the <code>st.file_uploader</code> function and are processed solely within the app. 
+        Once the session ends, the files are discarded. 
+        <strong>No data is stored or retained beyond the session</strong>.
+        </p>
+    """, unsafe_allow_html=True)
         
         if uploaded_file is not None:
             # Save uploaded file temporarily
