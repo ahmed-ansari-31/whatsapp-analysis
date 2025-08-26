@@ -19,6 +19,7 @@ from parser import WhatsAppParser
 from analyzer import ChatAnalyzer
 from predictor import ChatPredictor
 from visualizer import ChatVisualizer
+from database_manager import DatabaseManager
 
 # Page configuration
 st.set_page_config(
@@ -70,6 +71,10 @@ if 'analysis_results' not in st.session_state:
     st.session_state.analysis_results = None
 if 'predictions' not in st.session_state:
     st.session_state.predictions = None
+if 'db_manager' not in st.session_state:
+    st.session_state.db_manager = DatabaseManager()
+if 'current_session_id' not in st.session_state:
+    st.session_state.current_session_id = None
 
 def load_sample_data():
     """Load sample data for demonstration"""
@@ -91,7 +96,140 @@ def load_sample_data():
 1/2/24, 11:01 AM - Alice Brown: Count me in! 🙋‍♀️
 1/2/24, 11:02 AM - John Doe: Sure! Where should we go?
 1/2/24, 11:05 AM - Jane Smith: How about that new Italian place?
-1/2/24, 11:06 AM - Bob Wilson: Sounds perfect! 🍝"""
+1/2/24, 11:06 AM - Bob Wilson: Sounds perfect! 🍝
+1/1/24, 10:00 AM - John Doe: Hey everyone! Happy New Year! 🎉
+1/1/24, 10:01 AM - Jane Smith: Happy New Year! 🎊 How's everyone doing?
+1/1/24, 10:02 AM - Bob Wilson: Great! Just finished breakfast 😊
+1/1/24, 10:05 AM - John Doe: Planning anything special today?
+1/1/24, 10:06 AM - Jane Smith: Family dinner tonight! You?
+1/1/24, 10:08 AM - Bob Wilson: Movie marathon 🍿
+1/1/24, 2:30 PM - Alice Brown: Hey guys! Just woke up 😅
+1/1/24, 2:31 PM - John Doe: Good afternoon sleepyhead!
+1/1/24, 2:32 PM - Alice Brown: <Media omitted>
+1/1/24, 2:33 PM - Jane Smith: Nice photo! Where is that?
+1/1/24, 2:35 PM - Alice Brown: Central Park this morning ☀️
+1/1/24, 7:45 PM - Bob Wilson: Just ordered pizza 🍕 anyone hungry?
+1/1/24, 7:46 PM - Jane Smith: Yes!! Save me a slice 😂
+1/1/24, 8:10 PM - John Doe: About to watch fireworks 🎆
+1/1/24, 8:12 PM - Alice Brown: Send pics later!
+1/1/24, 11:59 PM - Jane Smith: Goodnight everyone 🌙
+1/2/24, 9:00 AM - Bob Wilson: Morning everyone!
+1/2/24, 9:15 AM - John Doe: Morning Bob! How was the movie marathon?
+1/2/24, 9:16 AM - Bob Wilson: Awesome! Watched 5 movies 🎬
+1/2/24, 11:00 AM - Jane Smith: Anyone up for lunch tomorrow?
+1/2/24, 11:01 AM - Alice Brown: Count me in! 🙋‍♀️
+1/2/24, 11:02 AM - John Doe: Sure! Where should we go?
+1/2/24, 11:05 AM - Jane Smith: How about that new Italian place?
+1/2/24, 11:06 AM - Bob Wilson: Sounds perfect! 🍝
+1/2/24, 3:20 PM - Alice Brown: Just had coffee ☕ needed energy
+1/2/24, 5:45 PM - John Doe: Anyone watched the game last night? 🏀
+1/2/24, 5:50 PM - Bob Wilson: Yep! Crazy last quarter!
+1/2/24, 6:00 PM - Jane Smith: I missed it 😭 highlights?
+1/3/24, 8:15 AM - Alice Brown: Morning!! 🌞
+1/3/24, 8:16 AM - John Doe: Morning Alice!
+1/3/24, 9:30 AM - Bob Wilson: Stuck in traffic 🚗
+1/3/24, 9:45 AM - Jane Smith: Same here, roads are packed today 😩
+1/3/24, 10:00 AM - John Doe: Working from home today 💻
+1/3/24, 12:30 PM - Alice Brown: Lunch break 🍔
+1/3/24, 12:45 PM - Bob Wilson: <Media omitted>
+1/3/24, 12:46 PM - Jane Smith: Omg that burger looks huge 😂
+1/3/24, 1:00 PM - John Doe: Now I’m hungry 😅
+1/3/24, 6:15 PM - Alice Brown: Meeting was so long today 💤
+1/3/24, 6:16 PM - Jane Smith: Same! Can’t wait for the weekend
+1/4/24, 7:00 AM - Bob Wilson: Good morning team! 🌅
+1/4/24, 7:05 AM - John Doe: Morning!
+1/4/24, 7:06 AM - Jane Smith: Coffee first ☕
+1/4/24, 9:30 AM - Alice Brown: Big presentation today, wish me luck 🤞
+1/4/24, 9:32 AM - Bob Wilson: You’ll crush it!
+1/4/24, 9:33 AM - John Doe: Good luck Alice!
+1/4/24, 12:15 PM - Alice Brown: Done ✅ went really well!
+1/4/24, 12:16 PM - Jane Smith: Yay! Proud of you 👏
+1/4/24, 12:17 PM - Bob Wilson: Congrats 🎉
+1/4/24, 7:45 PM - John Doe: Anyone free for a call?
+1/4/24, 7:50 PM - Jane Smith: Give me 10 mins
+1/5/24, 10:00 AM - Alice Brown: TGIF! 🎊
+1/5/24, 10:01 AM - Bob Wilson: Finally! Weekend plans?
+1/5/24, 10:05 AM - Jane Smith: Going hiking tomorrow 🥾
+1/5/24, 10:07 AM - John Doe: Nice! I’ll be watching football 🏈
+1/5/24, 11:00 AM - Alice Brown: Let’s meet for brunch Sunday?
+1/5/24, 11:05 AM - Bob Wilson: Count me in!
+1/5/24, 11:10 AM - Jane Smith: Yes please 🥞
+1/5/24, 11:12 AM - John Doe: Done ✅
+1/5/24, 7:00 PM - Alice Brown: <Media omitted>
+1/5/24, 7:01 PM - Jane Smith: Cute dog!! 🐶
+1/5/24, 7:02 PM - Bob Wilson: Adorable!
+1/1/24, 10:00 AM - John Doe: Hey everyone! Happy New Year! 🎉
+1/1/24, 10:01 AM - Jane Smith: Happy New Year!! 🎊 Wishing you all the best 💖
+1/1/24, 10:02 AM - Bob Wilson: Great start! Coffee in hand ☕😊
+1/1/24, 10:03 AM - Alice Brown: Happy 2024! 🥳
+1/1/24, 10:05 AM - Mike Johnson: Morning fam! Ready to smash goals this year 💪
+1/1/24, 10:06 AM - Sarah Lee: Just finished a run 🏃 feeling good!
+1/1/24, 10:07 AM - Tom Harris: Happy New Year, legends 😎
+1/1/24, 10:08 AM - Emily Clark: Fireworks last night were amazing 🎆
+1/1/24, 10:10 AM - John Doe: Anyone got resolutions? 🤔
+1/1/24, 10:12 AM - Jane Smith: Eat healthier (let’s see how long that lasts 😂)
+1/1/24, 10:13 AM - Bob Wilson: Travel more ✈️
+1/1/24, 2:30 PM - Alice Brown: Just woke up lol 😅
+1/1/24, 2:31 PM - Sarah Lee: Lazy bones! 😂
+1/1/24, 2:32 PM - Alice Brown: <Media omitted>
+1/1/24, 2:33 PM - Emily Clark: Omg where is that?
+1/1/24, 2:35 PM - Alice Brown: Central Park this morning ☀️
+
+1/5/24, 8:00 AM - Mike Johnson: Gym done ✅ feeling pumped
+1/5/24, 8:05 AM - Tom Harris: Bro chill, it’s Friday morning 😂
+1/5/24, 8:06 AM - Sarah Lee: Respect tho 🙌
+1/5/24, 10:15 AM - Emily Clark: Who’s free Sunday brunch? 🥞
+1/5/24, 10:16 AM - Jane Smith: Yes please!
+1/5/24, 10:20 AM - John Doe: Count me in
+1/5/24, 10:22 AM - Bob Wilson: Where we going?
+1/5/24, 10:25 AM - Emily Clark: That new café on 5th street?
+1/5/24, 10:26 AM - Alice Brown: Perfect! ❤️
+1/5/24, 10:27 AM - Tom Harris: Ok but I’m ordering pancakes AND waffles 😂
+
+1/14/24, 9:10 PM - Jane Smith: This weather tho 🌧️
+1/14/24, 9:12 PM - Sarah Lee: Same here… raining all day
+1/14/24, 9:15 PM - Mike Johnson: Good excuse to stay in and game 🎮
+1/14/24, 9:18 PM - Bob Wilson: <Media omitted>
+1/14/24, 9:19 PM - Emily Clark: Lol your cat looks so done 😂🐱
+1/14/24, 9:25 PM - Alice Brown: Awww cuteee
+
+2/2/24, 7:30 AM - John Doe: Morning guys 🌞
+2/2/24, 7:45 AM - Tom Harris: Too early, bro
+2/2/24, 7:50 AM - Sarah Lee: Already on my second coffee ☕
+2/2/24, 7:55 AM - Jane Smith: Same 😂
+2/2/24, 12:00 PM - Bob Wilson: Who’s up for lunch today?
+2/2/24, 12:01 PM - Mike Johnson: I’m in
+2/2/24, 12:03 PM - Emily Clark: Can’t, stuck at work 😭
+2/2/24, 12:05 PM - Alice Brown: Me too, maybe dinner instead?
+
+2/14/24, 6:00 PM - Jane Smith: Happy Valentine’s Day 💕
+2/14/24, 6:01 PM - Alice Brown: 😍
+2/14/24, 6:02 PM - Sarah Lee: My Valentine is pizza tonight 🍕😂
+2/14/24, 6:05 PM - Tom Harris: Mood lol
+2/14/24, 6:06 PM - Mike Johnson: Took gf out for sushi 🍣
+2/14/24, 6:07 PM - John Doe: Nice one bro 👍
+2/14/24, 6:08 PM - Emily Clark: <Media omitted>
+2/14/24, 6:09 PM - Bob Wilson: Cute couple! ❤️
+
+3/3/24, 10:00 AM - Sarah Lee: March already 😳
+3/3/24, 10:01 AM - John Doe: Time flying
+3/3/24, 10:05 AM - Alice Brown: Spring vibes 🌸
+3/3/24, 10:07 AM - Jane Smith: Finally some sun ☀️
+3/3/24, 2:15 PM - Mike Johnson: Anyone up for hiking next weekend?
+3/3/24, 2:16 PM - Tom Harris: I’m down 🥾
+3/3/24, 2:17 PM - Emily Clark: Same here
+3/3/24, 2:20 PM - Bob Wilson: As long as there’s food after 😂
+3/3/24, 2:22 PM - Sarah Lee: Always about food with you lol
+3/3/24, 2:25 PM - Bob Wilson: Priorities 🤷
+
+3/28/24, 8:45 PM - John Doe: Big news tomorrow 👀
+3/28/24, 8:46 PM - Jane Smith: Don’t tease ussss
+3/28/24, 8:47 PM - Alice Brown: Spill it now!
+3/28/24, 8:50 PM - John Doe: Patience 😉
+3/29/24, 9:00 AM - John Doe: I GOT PROMOTED!!! 🎉🎉🎉
+3/29/24, 9:01 AM - Everyone: Congrats!!!!! 🎊👏🔥
+
+"""
     
     # Save to temp file
     with open('temp_sample.txt', 'w', encoding='utf-8') as f:
@@ -109,9 +247,9 @@ def main():
         
         selected = option_menu(
             menu_title="Navigation",
-            options=["Upload Chat", "Analysis Dashboard", "User Insights", 
+            options=["Upload Chat", "Previous Chats", "Analysis Dashboard", "User Insights", 
                     "Predictions", "Visualizations", "Export Report"],
-            icons=["cloud-upload", "dashboard", "people", 
+            icons=["cloud-upload", "database", "dashboard", "people", 
                   "graph-up", "bar-chart", "download"],
             menu_icon="cast",
             default_index=0,
@@ -158,37 +296,55 @@ def main():
                 predictor = ChatPredictor(df)
                 st.session_state.predictions = predictor.get_prediction_summary()
                 
-                st.success("✅ Sample data loaded successfully!")
+                # Auto-save sample data too
+                try:
+                    session_name = f"Sample Data - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                    session_id = st.session_state.db_manager.save_analysis(
+                        session_name,
+                        sample_file,
+                        df,
+                        st.session_state.analysis_results['basic_stats'],
+                        st.session_state.analysis_results,
+                        st.session_state.predictions
+                    )
+                    st.session_state.current_session_id = session_id
+                    st.success(f"✅ Sample data loaded and automatically saved!")
+                except Exception as e:
+                    st.success(f"✅ Sample data loaded successfully!")
+                    st.warning(f"Auto-save failed: {str(e)}")
+                
                 st.rerun()
     
     # Main content based on selection
     if selected == "Upload Chat":
         upload_section()
+    elif selected == "Previous Chats":
+        previous_chats_section()
     elif selected == "Analysis Dashboard":
         if st.session_state.chat_data is not None:
             analysis_dashboard()
         else:
-            st.warning("⚠️ Please upload a WhatsApp chat file first!")
+            st.warning("⚠️ Please upload a WhatsApp chat file first or load from previous chats!")
     elif selected == "User Insights":
         if st.session_state.chat_data is not None:
             user_insights()
         else:
-            st.warning("⚠️ Please upload a WhatsApp chat file first!")
+            st.warning("⚠️ Please upload a WhatsApp chat file first or load from previous chats!")
     elif selected == "Predictions":
         if st.session_state.predictions is not None:
             predictions_section()
         else:
-            st.warning("⚠️ Please upload a WhatsApp chat file first!")
+            st.warning("⚠️ Please upload a WhatsApp chat file first or load from previous chats!")
     elif selected == "Visualizations":
         if st.session_state.chat_data is not None:
             visualizations_section()
         else:
-            st.warning("⚠️ Please upload a WhatsApp chat file first!")
+            st.warning("⚠️ Please upload a WhatsApp chat file first or load from previous chats!")
     elif selected == "Export Report":
         if st.session_state.analysis_results is not None:
             export_report()
         else:
-            st.warning("⚠️ Please upload a WhatsApp chat file first!")
+            st.warning("⚠️ Please upload a WhatsApp chat file first or load from previous chats!")
 
 def upload_section():
     """File upload section"""
@@ -243,6 +399,28 @@ def upload_section():
                         with st.spinner('🤖 Generating predictions...'):
                             predictor = ChatPredictor(df)
                             st.session_state.predictions = predictor.get_prediction_summary()
+                        
+                        # Automatically save to database (no manual button needed)
+                        with st.spinner('💾 Auto-saving analysis...'):
+                            # Generate automatic session name
+                            file_name = uploaded_file.name.replace('.txt', '').replace('_', ' ')
+                            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
+                            session_name = f"{file_name} - {timestamp}"
+                            
+                            try:
+                                session_id = st.session_state.db_manager.save_analysis(
+                                    session_name,
+                                    'temp_chat.txt',
+                                    df,
+                                    st.session_state.analysis_results['basic_stats'],
+                                    st.session_state.analysis_results,
+                                    st.session_state.predictions
+                                )
+                                st.session_state.current_session_id = session_id
+                                st.success(f"✅ Analysis automatically saved as: '{session_name}'")
+                                st.info("💡 You can now load this analysis instantly from 'Previous Chats' section!")
+                            except Exception as e:
+                                st.warning(f"⚠️ Auto-save failed: {str(e)} - Analysis is still available in this session.")
                         
                         st.success(f"✅ Successfully analyzed {len(df)} messages!")
                         st.balloons()
@@ -364,6 +542,10 @@ def user_insights():
     
     user_stats = st.session_state.analysis_results['user_stats']
     
+    # Ensure user_stats is a DataFrame
+    if isinstance(user_stats, dict):
+        user_stats = pd.DataFrame(user_stats)
+    
     # User selection
     users = user_stats['user'].tolist()
     selected_user = st.selectbox("Select a user for detailed analysis:", users)
@@ -471,7 +653,9 @@ def predictions_section():
     peak_hours = future_activity['peak_predicted_hours']
     if peak_hours:
         peak_df = pd.DataFrame(list(peak_hours.items()), columns=['Hour', 'Avg Messages'])
-        peak_df['Hour'] = peak_df['Hour'].apply(lambda x: f"{x:02d}:00")
+        # Convert hour to integer if it's a string
+        peak_df['Hour'] = peak_df['Hour'].apply(lambda x: int(x) if isinstance(x, str) and x.isdigit() else x)
+        peak_df['Hour'] = peak_df['Hour'].apply(lambda x: f"{x:02d}:00" if isinstance(x, int) else str(x))
         st.dataframe(peak_df, hide_index=True)
     
     # Recommendations
@@ -514,6 +698,10 @@ def visualizations_section():
     tab1, tab2, tab3, tab4, tab5 = st.tabs(["Timeline", "Heatmaps", "User Analysis", "Word Analysis", "Predictions"])
     
     with tab1:
+        st.markdown("### 📅 Messages Over Months")
+        monthly_fig = visualizer.create_monthly_timeline()
+        st.plotly_chart(monthly_fig, use_container_width=True)
+        
         st.markdown("### 📈 Message Timeline")
         timeline_fig = visualizer.create_message_timeline()
         st.plotly_chart(timeline_fig, use_container_width=True)
@@ -521,6 +709,7 @@ def visualizations_section():
         st.markdown("### 💭 Sentiment Over Time")
         sentiment_fig = visualizer.create_sentiment_timeline()
         st.plotly_chart(sentiment_fig, use_container_width=True)
+        
     
     with tab2:
         st.markdown("### 🗓️ Activity Heatmap")
@@ -721,6 +910,126 @@ def generate_html_report(analysis, predictions=None):
     """
     
     return html
+
+def previous_chats_section():
+    """Previous chats management section"""
+    st.markdown('<h2 class="sub-header">📋 Previous Chat Analyses</h2>', unsafe_allow_html=True)
+    
+    # Get database statistics
+    db_stats = st.session_state.db_manager.get_database_stats()
+    
+    # Show database info
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Saved Sessions", db_stats['session_count'])
+    with col2:
+        st.metric("Total Messages", f"{db_stats['total_messages']:,}")
+    with col3:
+        st.metric("Database Size", f"{db_stats['db_size_mb']:.1f} MB")
+    with col4:
+        st.metric("Storage Used", f"{db_stats['message_count']:,} records")
+    
+    st.markdown("---")
+    
+    # Get saved sessions
+    sessions = st.session_state.db_manager.get_saved_sessions()
+    
+    if not sessions:
+        st.info("💭 No previous chat analyses found. Upload and analyze a chat first!")
+        return
+    
+    st.markdown("### 📁 Saved Chat Analyses")
+    
+    # Create tabs for different views
+    tab1, tab2 = st.tabs(["Recent Sessions", "Search & Manage"])
+    
+    with tab1:
+        # Display sessions in an interactive table
+        for session in sessions:
+            with st.container():
+                col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
+                
+                with col1:
+                    st.subheader(session['session_name'])
+                    st.caption(f"Date Range: {session['date_range_start']} to {session['date_range_end']}")
+                
+                with col2:
+                    st.metric("Messages", f"{session['total_messages']:,}")
+                    st.metric("Participants", session['total_participants'])
+                
+                with col3:
+                    st.write(f"📅 **Uploaded:** {session['upload_date'][:10]}")
+                    st.write(f"🕰️ **Last Accessed:** {session['last_accessed'][:10]}")
+                
+                with col4:
+                    if st.button("📊 Load", key=f"load_{session['id']}", help="Load this analysis"):
+                        with st.spinner('Loading analysis...'):
+                            df, basic_stats, analysis_results, predictions = st.session_state.db_manager.load_analysis(session['id'])
+                            
+                            if df is not None:
+                                st.session_state.chat_data = df
+                                st.session_state.analysis_results = analysis_results
+                                st.session_state.predictions = predictions
+                                st.session_state.current_session_id = session['id']
+                                
+                                st.success(f"✅ Successfully loaded '{session['session_name']}'!")
+                                st.balloons()
+                                st.rerun()
+                            else:
+                                st.error("❌ Failed to load analysis.")
+                    
+                    if st.button("🗑️ Delete", key=f"delete_{session['id']}", help="Delete this analysis"):
+                        if st.session_state.db_manager.delete_session(session['id']):
+                            st.success("✅ Session deleted successfully!")
+                            st.rerun()
+                        else:
+                            st.error("❌ Failed to delete session.")
+                
+                st.markdown("---")
+    
+    with tab2:
+        st.markdown("### 🔍 Search Messages")
+        
+        # Session selector for search
+        session_options = {f"{s['session_name']} ({s['upload_date'][:10]})": s['id'] for s in sessions}
+        selected_session = st.selectbox("Select session to search:", options=list(session_options.keys()))
+        
+        if selected_session:
+            session_id = session_options[selected_session]
+            search_term = st.text_input("🔍 Search messages:", placeholder="Enter search term...")
+            
+            if search_term and len(search_term) >= 2:
+                results = st.session_state.db_manager.search_messages(session_id, search_term)
+                
+                if results:
+                    st.success(f"Found {len(results)} messages containing '{search_term}'")
+                    
+                    for result in results:
+                        with st.expander(f"{result['sender']} - {result['timestamp'][:16]}"):
+                            st.write(result['message'])
+                else:
+                    st.info("No messages found matching your search.")
+        
+        st.markdown("---")
+        st.markdown("### 🛠️ Database Management")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("🔄 Refresh Data", help="Refresh the sessions list"):
+                st.rerun()
+        
+        with col2:
+            if st.button("⚠️ Clear All Data", help="Delete all saved analyses"):
+                if st.checkbox("I understand this will delete all saved analyses"):
+                    # This would require implementing a clear_all method in DatabaseManager
+                    st.warning("This feature is not yet implemented for safety reasons.")
+    
+    # Show current session info if any
+    if st.session_state.current_session_id:
+        current_session = next((s for s in sessions if s['id'] == st.session_state.current_session_id), None)
+        if current_session:
+            st.success(f"🟢 Currently loaded: **{current_session['session_name']}**")
 
 if __name__ == "__main__":
     main()

@@ -22,6 +22,66 @@ class ChatVisualizer:
         self.analysis = analysis_results
         self.color_palette = px.colors.qualitative.Plotly
         
+    def create_monthly_timeline(self):
+        """Create interactive timeline of messages aggregated by month"""
+
+        # Ensure 'date' is datetime
+        df_copy = self.df.copy()
+        df_copy['date'] = pd.to_datetime(df_copy['date'])
+
+        # Aggregate messages by month
+        monthly_counts = (
+            df_copy
+            .groupby(df_copy['date'].dt.to_period("M"))
+            .size()
+            .reset_index(name='count')
+        )
+        monthly_counts['date'] = monthly_counts['date'].dt.to_timestamp()
+
+        # Rolling average (3 months for smoother trends)
+        monthly_counts['rolling_avg'] = (
+            monthly_counts['count']
+            .rolling(window=3, min_periods=1)
+            .mean()
+        )
+
+        # Create figure
+        fig = go.Figure()
+
+        # Bar for total messages each month
+        fig.add_trace(go.Bar(
+            x=monthly_counts['date'],
+            y=monthly_counts['count'],
+            name='Messages',
+            marker=dict(color='rgba(31, 119, 180, 0.6)'),
+            hovertemplate='<b>Month:</b> %{x|%b %Y}<br><b>Messages:</b> %{y}<extra></extra>'
+        ))
+
+        # Rolling average line
+        fig.add_trace(go.Scatter(
+            x=monthly_counts['date'],
+            y=monthly_counts['rolling_avg'],
+            mode='lines+markers',
+            name='3-Month Average',
+            line=dict(color='#ff7f0e', width=2, dash='dash'),
+            marker=dict(size=6),
+            hovertemplate='<b>Month:</b> %{x|%b %Y}<br><b>Avg:</b> %{y:.1f}<extra></extra>'
+        ))
+
+        # Fancy layout
+        fig.update_layout(
+            title='📅 Monthly Message Timeline',
+            xaxis_title='Month',
+            yaxis_title='Number of Messages',
+            hovermode='x unified',
+            showlegend=True,
+            height=500,
+            template='plotly_white',
+            bargap=0.2
+        )
+
+        return fig
+
     def create_message_timeline(self):
         """Create interactive timeline of messages"""
         
@@ -68,6 +128,10 @@ class ChatVisualizer:
         
         user_stats = self.analysis['user_stats']
         
+        # Ensure user_stats is a DataFrame
+        if isinstance(user_stats, dict):
+            user_stats = pd.DataFrame(user_stats)
+        
         fig = make_subplots(
             rows=2, cols=2,
             subplot_titles=('Messages by User', 'Words by User', 
@@ -79,8 +143,8 @@ class ChatVisualizer:
         # Messages
         fig.add_trace(
             go.Bar(
-                x=user_stats['user'],
-                y=user_stats['message_count'],
+                x=user_stats['user'].tolist() if hasattr(user_stats['user'], 'tolist') else list(user_stats['user']),
+                y=user_stats['message_count'].tolist() if hasattr(user_stats['message_count'], 'tolist') else list(user_stats['message_count']),
                 name='Messages',
                 marker_color='#1f77b4',
                 hovertemplate='<b>%{x}</b><br>Messages: %{y}<extra></extra>'
@@ -91,8 +155,8 @@ class ChatVisualizer:
         # Words
         fig.add_trace(
             go.Bar(
-                x=user_stats['user'],
-                y=user_stats['word_count'],
+                x=user_stats['user'].tolist() if hasattr(user_stats['user'], 'tolist') else list(user_stats['user']),
+                y=user_stats['word_count'].tolist() if hasattr(user_stats['word_count'], 'tolist') else list(user_stats['word_count']),
                 name='Words',
                 marker_color='#ff7f0e',
                 hovertemplate='<b>%{x}</b><br>Words: %{y}<extra></extra>'
@@ -103,8 +167,8 @@ class ChatVisualizer:
         # Emojis
         fig.add_trace(
             go.Bar(
-                x=user_stats['user'],
-                y=user_stats['emoji_count'],
+                x=user_stats['user'].tolist() if hasattr(user_stats['user'], 'tolist') else list(user_stats['user']),
+                y=user_stats['emoji_count'].tolist() if hasattr(user_stats['emoji_count'], 'tolist') else list(user_stats['emoji_count']),
                 name='Emojis',
                 marker_color='#2ca02c',
                 hovertemplate='<b>%{x}</b><br>Emojis: %{y}<extra></extra>'
@@ -115,8 +179,8 @@ class ChatVisualizer:
         # Media
         fig.add_trace(
             go.Bar(
-                x=user_stats['user'],
-                y=user_stats['media_count'],
+                x=user_stats['user'].tolist() if hasattr(user_stats['user'], 'tolist') else list(user_stats['user']),
+                y=user_stats['media_count'].tolist() if hasattr(user_stats['media_count'], 'tolist') else list(user_stats['media_count']),
                 name='Media',
                 marker_color='#d62728',
                 hovertemplate='<b>%{x}</b><br>Media: %{y}<extra></extra>'
@@ -172,24 +236,37 @@ class ChatVisualizer:
     
     def create_emoji_chart(self):
         """Create emoji usage chart"""
-        
+        import ast
         emoji_data = self.analysis['emoji_analysis']
-        top_emojis = emoji_data['top_emojis'][:15]
-        
-        if top_emojis:
-            emojis = [item[0] for item in top_emojis]
-            counts = [item[1] for item in top_emojis]
-            
+        top_emojis_raw = emoji_data['top_emojis'][:15]
+        top_emojis = []
+        if top_emojis_raw:
+        # Safely convert each string "(emoji, count)" into a tuple
+            for item in top_emojis_raw:
+                try:
+                    tup = ast.literal_eval(item)  # ('🙏', 9)
+                    if isinstance(tup, tuple) and len(tup) == 2:
+                        top_emojis.append(tup)
+                except Exception:
+                    continue
+
+            # Now split into lists
+            emojis = [t[0] for t in top_emojis]
+            counts = [t[1] for t in top_emojis]
+
+            print("emojis", emojis)
+            print("counts", counts)
             fig = go.Figure(data=[
                 go.Bar(
                     x=counts,
                     y=emojis,
                     orientation='h',
-                    marker=dict(
-                        color=counts,
-                        colorscale='Viridis',
-                        showscale=False
-                    ),
+                    # marker=dict(
+                    #     color=counts,
+                    #     colorscale='Viridis',
+                    #     showscale=False
+                    # ),
+                    marker=dict(color="#1f77b4"),
                     hovertemplate='<b>%{y}</b><br>Count: %{x}<extra></extra>'
                 )
             ])
@@ -248,7 +325,7 @@ class ChatVisualizer:
         """Create sentiment analysis timeline"""
         
         sentiment_data = self.analysis['sentiment_analysis']['sentiment_over_time']
-        
+        print("sentiment_data", sentiment_data)
         if sentiment_data:
             df_sentiment = pd.DataFrame(sentiment_data)
             
@@ -294,6 +371,10 @@ class ChatVisualizer:
         """Create response time analysis chart"""
         
         user_stats = self.analysis['user_stats']
+        
+        # Ensure user_stats is a DataFrame
+        if isinstance(user_stats, dict):
+            user_stats = pd.DataFrame(user_stats)
         
         # Filter users with response time data
         users_with_response = user_stats[user_stats['avg_response_time_minutes'].notna()]
